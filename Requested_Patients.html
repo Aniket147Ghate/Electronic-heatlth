@@ -1,0 +1,207 @@
+<!DOCTYPE html>
+<html lang="en" dir="ltr">
+
+<head>
+  <meta charset="utf-8">
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link rel="stylesheet" type="text/css" href="vendor/bootstrap/css/bootstrap.min.css">
+  <link rel="stylesheet" type="text/css" href="fonts/font-awesome-4.7.0/css/font-awesome.min.css">
+  <link rel="stylesheet" type="text/css" href="css/patient.css">
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/web3/1.6.1/web3.min.js"></script>
+  <script src="https://bundle.run/buffer@5.4.0"></script>
+  <script src="https://unpkg.com/ipfs-api@9.0.0/dist/index.js" integrity="sha384-5bXRcW9kyxxnSMbOoHzraqa7Z0PQWIao+cgeg327zit1hz5LZCEbIMx/LWKPReuB" crossorigin="anonymous"></script>
+  <title></title>
+</head>
+
+<body>
+  <nav class="navbar bg-dark navbar-expand">
+    <a class="navbar-brand" href="#" style="color:white;">
+      Patient Panel
+    </a>
+    <ul class="navbar-nav ml-auto">
+      <li class="nav-item">
+        <a class="nav-item nav-link btn btn-dark" onclick="Accessed_List()" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false" style="color:white; margin-right:25px;">
+          Accessed Patients
+        </a>
+      </li>
+      <li class="nav-item">
+        <a class=" nav-link btn btn-primary" onclick="Logout()" id="navbarDropdownMenuLink" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false" style="color:white;">
+          Logout
+        </a>
+      </li>
+    </ul>
+  </nav>
+  <div class="ani-cont container bootstrap snippets bootdey">
+      <div class="row">
+          <div class="col-lg-12">
+              <div class="main-box no-header clearfix">
+                  <div class="main-box-body clearfix">
+                      <div class="table-responsive">
+                          <table class="table user-list">
+                              <thead>
+                                  <tr>
+                                  <th><span>User/Patient Requested</span></th>
+                                  <th><span></span></th>
+                                  <th class="text-center"><span></span></th>
+                                  <th><span></span></th>
+                                  <th><span></span></th>
+
+
+                                  <th><span></span><th>
+                                  <th>&nbsp;</th>
+                                  </tr>
+                              </thead>
+                              <tbody id= "ani">
+
+                              </tbody>
+                          </table>
+                      </div>
+                  </div>
+              </div>
+          </div>
+      </div>
+  </div>
+</body>
+</html>
+
+<script type="text/javascript" src="load_contract.js"></script>
+
+<script>
+  var web3;
+  var l = [];
+  var contract;
+  var account;
+  window.addEventListener('load', async () => {
+    contract = load_contract();
+      if (window.ethereum) {
+        await window.ethereum.request({
+          method: 'eth_requestAccounts'
+        }).then((accounts) => {
+          //console.log(accounts[0]);
+          account = accounts[0];
+        });
+        window.ethereum.on('accountsChanged', function (accounts) {
+          window.location.href = "\index.html";
+
+});
+        console.log(web3.utils.toChecksumAddress(account));
+      l = await contract.methods.show_Requested_Patients(account).call();
+      console.log(l);
+      if(l.length == 0 ){
+        demo();
+      }
+      for(let i=0;i<l.length;i++){
+      var v = await contract.methods.getPatientName(l[i]).call();
+      console.log(v);
+      DisplayRequested(l[i],v);
+    }
+  }else{
+        alert("metamask not detected");
+        //window.location.href = "http://127.0.0.1:3000/index.html";
+  }
+});
+
+var intervalId = window.setInterval(async function(){
+      console.log("success")
+      if (!window.ethereum) {
+        alert("disconneted");
+      }
+//let neww = await contract.methods.show_Doctor_requests(account).call({from:account});
+//console.log(neww[0]);
+  //gett(neww);
+}, 10000);
+
+  function DisplayRequested(patients,name) {
+    console.log("clicked");
+
+    var tbod = document.getElementById("ani");
+    var tr = document.createElement("tr");
+    var td1 = document.createElement('td')
+    img1 = document.createElement('img')
+    img1.src = "images/1430453.png"
+    img1.style.width = '100px';
+  img1.style.height = '100px';
+    td1.appendChild(img1);
+    var td2 = document.createElement('td')
+    var an = document.createElement('a')
+    an.className = "auser user-link"
+    an.innerText = "Name: "+name
+    var sp = document.createElement('span')
+    sp.className = "user-subhead"
+    sp.innerText = "Address: "+patients
+    td2.append(an,sp)
+    var td3 = document.createElement('td')
+    //td3.setAttribute('style',"width:50%")
+    var an2 = document.createElement('a')
+    an2.className = "table-link text-warning"
+    var an3 = document.createElement('button')
+    an3.className = "agn btn btn-primary pull-right"
+    an3.textContent="Withdraw Request"
+    an3.setAttribute('style','margin-left: 450px')
+    an3.onclick = async function(){
+      var i = l[0].indexOf(patients);
+      var ad = await contract.methods.remove_from_Doctor(i,account,patients).send({from:account}).then(async (m) => {
+        var req = await contract.methods.show_Doctor_requests(patients).call();
+        var pp = web3.utils.toChecksumAddress(account);
+        var i = req.indexOf(pp);
+        var a = await contract.methods.remove_from_Patient(patients,i).send({from:account});
+        var req = await contract.methods.show_Requested_Patients(account).call();
+        if(req.length == 0) {
+            tr.remove();
+           demo();
+        }
+        for(let i=0;i<req.length;i++){
+        var v = await contract.methods.getPatientName(req[i]).call();
+        console.log(v);
+        DisplayRequested(req[i],v);
+      }
+    });
+  }
+    td3.append(an2,an3);
+
+    tr.append(td1,td2,td3);
+
+    tbod.append(tr);
+  }
+
+
+
+  function Accessed_List(){
+    window.location.href = "\Patients_Accepted_list.html"
+  }
+
+  async function Logout() {
+
+    window.location.href = "\index.html";
+
+  }
+
+
+  function demo(){
+    console.log("success")
+    var tbod = document.getElementById("ani");
+    var tr = document.createElement("tr");
+    var td1 = document.createElement('td')
+    var td2 = document.createElement('td')
+    var an = document.createElement('a')
+    an.className = "auser user-link"
+
+    var sp = document.createElement('span')
+    sp.className = "user-subhead"
+    td2.append(an,sp)
+    var td3 = document.createElement('td')
+    //td3.setAttribute('style',"width:50%")
+    var an2 = document.createElement('a')
+    an2.className = "table-link text-warning"
+
+    an2.innerText = "Nothing to Show Here !"
+
+    td3.append(an2);
+
+    tr.append(td1,td2,td3);
+
+    tbod.append(tr);
+  }
+</script>

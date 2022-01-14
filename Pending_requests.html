@@ -1,0 +1,188 @@
+<!DOCTYPE html>
+<html lang="en" dir="ltr">
+
+<head>
+  <meta charset="utf-8">
+  <link rel="stylesheet" type="text/css" href="vendor/bootstrap/css/bootstrap.min.css">
+  <link rel="stylesheet" type="text/css" href="fonts/font-awesome-4.7.0/css/font-awesome.min.css">
+  <link rel="stylesheet" type="text/css" href="css/patient.css">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/web3/1.6.1/web3.min.js"></script>
+  <script src="https://bundle.run/buffer@5.4.0"></script>
+  <script src="https://unpkg.com/ipfs-api@9.0.0/dist/index.js" integrity="sha384-5bXRcW9kyxxnSMbOoHzraqa7Z0PQWIao+cgeg327zit1hz5LZCEbIMx/LWKPReuB" crossorigin="anonymous"></script>
+
+  <link rel="stylesheet" type="text/css" href="css/doctor.css">
+  <link rel="stylesheet" type="text/css" href="css/doctor_next.css">
+
+
+  <title></title>
+</head>
+
+<body style="background-color: #F0FFFF">
+  <nav class="navbar bg-dark navbar-expand">
+    <a class="navbar-brand" href="#" style="color:white;">
+      Patient Panel
+    </a>
+    <ul class="navbar-nav ml-auto">
+      <li class="nav-item">
+        <a class="nav-item nav-link btn btn" onclick="Accp_List()" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false" style="color:white;">
+          Accepted Doctors
+        </a>
+      </li>
+      <li class="nav-item">
+        <a class=" nav-link btn btn-primary" onclick="Logout()" id="navbarDropdownMenuLink" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false" style="color:white;">
+          Logout
+        </a>
+      </li>
+    </ul>
+  </nav>
+</body>
+<script type="text/javascript" src="load_contract.js"></script>
+<script type="text/javascript">
+let pending = [];
+var contract;
+var account;
+  window.addEventListener('load', async () => {
+            contract = load_contract();
+            if(contract == "metamask not detected"){
+              alert("Please installed metamask");
+            }else {
+              if (window.web3 !== 'undefined') {
+                window.web3 = new Web3(window.ethereum);
+                //await window.ethereum.enable();
+              } else {
+                web3 = new Web3(window.web3.currentProvider);
+              }
+              if (window.ethereum) {
+                await window.ethereum.request({
+                  method: 'eth_requestAccounts'
+                }).then(async (accounts) => {
+                  //console.log(accounts[0]);
+                  pending = await contract.methods.show_Doctor_requests(account).call();
+                   console.log(pending);
+                   if(pending.length >=1){
+                   gett(pending);
+                 }
+                });
+                window.ethereum.on('accountsChanged', function (accounts) {
+                  window.location.href = "\index.html";
+
+        });
+              }
+
+          }
+        });
+
+        async function gett(arr){
+          if(arr){
+          for(i=0;i<arr.length;i++){
+            let name = await contract.methods.getDoctorName(arr[i]).call();
+          CreateNew(name,arr[i]);
+        }
+}
+}
+
+
+      var intervalId = window.setInterval(async function(){
+            console.log("success")
+      //let neww = await contract.methods.show_Doctor_requests(account).call({from:account});
+      //console.log(neww[0]);
+        //gett(neww);
+      }, 10000);
+
+
+async function CreateNew(name,address){
+  var contain = document.createElement("div");
+  contain.className = "container  ";
+  var new_row = document.createElement("div");
+  new_row.className = "row  ";
+  var col1 = document.createElement("div");
+  col1.className  = "col-md-8 border";
+  var people = document.createElement("div");
+  people.className = "people-nearby"
+  var nearby = document.createElement("div");
+  nearby.className = "nearby-user"
+  var next_row = document.createElement("div");
+  next_row.className = "row"
+  var col2 = document.createElement("div");
+  col2.className = "col-md-2 col-sm-2"
+  var new_div = document.createElement('div');
+  new_div.className = "col-md-3 col-sm-3"
+  var but = document.createElement('button');
+  but.className = "btn btn-primary pull-right";
+  but.textContent = "Accept \n \n "
+  but.onclick = async function (){
+    var pp = await contract.methods.show_Requested_Patients(address).call({from:account});
+    var pats = web3.utils.toChecksumAddress(account);
+    var i = pp.indexOf(pats);
+    var t = await contract.methods.accept_Doctor(address,i).send({from: account}).then((m) =>{
+      console.log("success");
+    });
+    var i = pending.indexOf(address)
+    var neww = await contract.methods.remove_from_Patient(account,i).send({from:account}).then((m)=>{
+    console.log("removed",);
+    gett(neww)
+
+  });
+      //await contract.methods.remove_from_Doctor(i,address,account).call();
+  }
+  var p1 = document.createElement('p');
+  p1.innerText = "\n \n";
+  var but2 = document.createElement('button');
+  but2.className = "btn  btn-primary pull-right";
+
+  but2.textContent = "Reject \n \n \n"
+  but2.onclick = async function (){
+    console.log("clicked")
+    var pp = await contract.methods.show_Requested_Patients(address).call({from:account});
+    var up = account.toUpperCase();
+    console.log(up)
+    console.log(pp.indexOf(up));
+    if(pp[0] == account){
+    console.log(ind,account);
+    var t = await contract.methods.remove_from_Doctor(address).send({from: account}).then((m) =>{
+      console.log("success");
+    });
+    var i = pending.indexOf(address)
+    var neww = await contract.methods.remove_from_Patient(account,i).send({from:account}).then((m)=>{
+    console.log("removed",);
+    gett(neww)
+
+  });
+}
+}
+
+  var third_div = document.createElement('div');
+  third_div.className = "col-md-9 col-sm-9"
+
+  var p = document.createElement('p');
+  p.innerText = "Doctor's Name: "+name;
+
+  var t = document.createElement('p');
+  t.innerText = "Address of This Patient: "+ address;
+  third_div.appendChild(p);
+
+  third_div.appendChild(t,);
+  new_div.append(but,p1,but2);
+  next_row.append(third_div,new_div);
+  nearby.appendChild(next_row);
+  people.appendChild(nearby);
+  col1.append(people);
+  new_row.appendChild(col1);
+  contain.appendChild(new_row);
+
+  document.body.appendChild(contain);
+}
+
+function Accp_List(){
+  window.location.href = "\Accepted_doctor_list.html"
+
+}
+
+function Logout(){
+    window.location.href = "\index.html";
+    //window.history.forward();
+
+}
+
+
+</script>

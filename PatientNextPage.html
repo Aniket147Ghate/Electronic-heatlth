@@ -1,0 +1,203 @@
+<!DOCTYPE html>
+<html lang="en" dir="ltr">
+  <head>
+    <meta charset="utf-8">
+    <link rel="stylesheet" type="text/css" href="vendor/bootstrap/css/bootstrap.min.css">
+    <link rel="stylesheet" type="text/css" href="fonts/font-awesome-4.7.0/css/font-awesome.min.css">
+    <link rel="stylesheet" type="text/css" href="css/patient.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/web3/1.6.1/web3.min.js"></script>
+    <script src="https://bundle.run/buffer@5.4.0"></script>
+    <script src="https://unpkg.com/ipfs-api@9.0.0/dist/index.js" integrity="sha384-5bXRcW9kyxxnSMbOoHzraqa7Z0PQWIao+cgeg327zit1hz5LZCEbIMx/LWKPReuB" crossorigin="anonymous"></script>
+
+    <link rel="stylesheet" type="text/css" href="css/doctor.css">
+    <link rel="stylesheet" type="text/css" href="css/doctor_next.css">
+
+
+    <title></title>
+  </head>
+  <body style="background-color: #F0FFFF">
+    <nav class="navbar bg-dark navbar-expand">
+      <a class="navbar-brand" href="#" style="color:white;">
+        Patient Panel
+        </a>
+        <ul class="navbar-nav ml-auto">
+          <li class="nav-item">
+                <a class="nav-item nav-link btn btn" onclick= "Accp_List()"  data-toggle="dropdown" aria-haspopup="true" aria-expanded="false" style="color:white;">
+                  Accepted Doctors
+                </a>
+              </li>
+              <li class="nav-item">
+                    <a class="nav-link btn btn-info" onclick="req_List()"  data-toggle="dropdown" aria-haspopup="true" aria-expanded="false" style="color:white;">
+                      Request's Pending
+                    </a>
+                  </li>
+            <li class="nav-item">
+        <a class=" nav-link btn btn-primary" onclick="Logout()" id="navbarDropdownMenuLink" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false" style="color:white;">
+         Logout
+       </a>
+      </li>
+    </ul>
+  </nav>
+  <form method="post">
+  <div class="form-group">
+  <input class="form-control"  type="file" id="formFile" accept="image/*" onchange="onChange(event)">
+  <input class="form-control" type="text" id="textbox" required>
+  <a class="form-control btn btn-primary needs-validation" onclick="UploadImg()">
+    Submit
+  </a>
+</form>
+</div>
+<div>
+
+  <script type="text/javascript" src="load_contract.js"></script>
+
+  <script>
+  var web3;
+  var file_buffer;
+  var files= [];
+  let desc = [];
+  let store = 0;
+  var contract;
+  window.addEventListener('load', async () => {
+    contract = load_contract();
+    if(contract == "metamask not detected"){
+      alert("Please installed metamask");
+    }
+    else{
+      if (window.web3 !== 'undefined') {
+        window.web3 = new Web3(window.ethereum);
+        //await window.ethereum.enable();
+      } else {
+        web3 = new Web3(window.web3.currentProvider);
+      }
+      if (window.ethereum) {
+        await window.ethereum.request({
+          method: 'eth_requestAccounts'
+        }).then(async (accounts) => {
+          //console.log(accounts[0]);
+          account = accounts[0];
+             let result = await contract.methods.getFileHash(account).call();
+           if(result[0].length > 0){
+             console.log("yayy")
+             getfiles(result[0],result[0].length-1,0,result[1]);
+           }
+        });
+        window.ethereum.on('accountsChanged', function (accounts) {
+          window.location.href = "\index.html";
+
+});
+      }
+          else{
+           console.log("metamask not detected");
+          }
+        }
+
+         });
+
+         async function onChange(event) {
+           event.preventDefault();
+           const file = event.target.files[0];
+           const reader = new window.FileReader();
+           reader.readAsArrayBuffer(file);
+           reader.onloadend = async () => {
+             file_buffer = buffer.Buffer(reader.result);
+             console.log(file_buffer);
+             //file_buffer = reader.result;
+
+           }
+         }
+         async function UploadImg() {
+           var des = document.getElementById("textbox").value;
+           if(!des==""){
+           const ipfs = IpfsApi({ host: 'ipfs.infura.io',port: 5001,protocol: 'https'});
+           ipfs.add(file_buffer).then((res) => {
+             console.log(res[0].hash);
+             files.push(res[0].hash);
+             console.log(files);
+             contract.methods.addUp(account,res[0].hash,des).send({from:account}).then(async(m) =>{
+               //console.log(m)
+               console.log(des)
+               desc.push(des);
+               getfiles(files,files.length-1,files.length-1,desc);
+             });
+
+             //var image = document.getElementById('output');
+             //image.src = "https://ipfs.io/ipfs/" + res[0].hash;
+             //var userInput = document.getElementById("").value;
+             //RemixContract.methods.uploadImage(res[0].hash, userInput).send({
+               //from: account
+             //});
+             //then((m) => {
+               //console.log("Success");
+               //getFiles();
+             });
+           }else{
+             alert("Please Fill required field");
+           }
+
+       }
+
+      function getfiles(files,start_index,end_index,desc){
+        console.log(files)
+          for(let i=start_index;i>=end_index;i--){
+            console.log("https://ipfs.io/ipfs/"+files[i])
+            DisplayFiles("https://ipfs.io/ipfs/"+files[i],desc[i])
+          }
+          //req_list = contract.methods.show_Doctor_requests(account).call();
+          //Display_requests(req_list);
+      }
+
+    function DisplayFiles(hash,description){
+      console.log("clicked");
+      var col1 = document.createElement("div");
+      col1.className = "container  mx-auto mt-4"
+      var row = document.createElement("div")
+      row.className = "col-md-4"
+      var con_div = document.createElement("div");
+      con_div.className = "card";
+      con_div.setAttribute("style","width:30.2rem")
+
+      var img = document.createElement('img');
+      img.className = "card-img-top";
+      img.src = hash
+      img.setAttribute("style","width:30rem;")
+      var first_div = document.createElement('div');
+      first_div.className = "card-body";
+      var h = document.createElement("h5")
+      h.className = "card-title text-center"
+      h.innerText = "Description : "
+      var p = document.createElement("p")
+      p.className = "card-text"
+      p.innerText = description;
+      first_div.append(h,p);
+
+      con_div.append(img,first_div);
+      col1.append(row,con_div);
+      document.body.appendChild(col1);
+      //document.getElementById("createnew").innerHTML= data();
+    }
+
+
+    function req_List(){
+      window.location.href = "\Pending_requests.html"
+
+    }
+    function Accp_List(){
+      window.location.href = "\Accepted_doctor_list.html"
+
+    }
+
+    function Logout(){
+      function preventBack(){window.history.forward();}
+ setTimeout("preventBack()", 0);
+ window.onunload=function(){null};
+      	window.location.href = "\index.html"
+
+    }
+
+
+
+
+  </script>
+  </body>
+</html>

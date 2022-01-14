@@ -1,0 +1,131 @@
+// SPDX-License-Identifier: GPL-3.0
+
+pragma solidity ^0.8.2;
+pragma abicoder v2;
+
+/**
+ * @title Storage
+ * @dev Store & retrieve value in a variable
+ */
+contract Storage {
+
+  struct patient {
+    string name;
+    //uint8 age;
+    address id;
+    //string[] files;
+    //uint count;
+    //bytes32[] files;// hashes of file that belong to this user for display purpose
+    //address[] doctors_names;
+}
+
+
+
+ mapping(address => bool) public patient_list;
+  mapping (address => patient) public patients;
+
+  mapping(address => string) public Pat_Name;
+  mapping(address => string) public Doc_Name;
+
+  mapping(address => string[])  file_array;
+  mapping(address => string[]) description;
+
+  mapping(address => bool) public localDb;
+
+    struct doctor{
+        string name;
+        address id;
+        //string password;
+    }
+
+    mapping(address => doctor) public doctor_map;
+    mapping(address => bool) public doctor_list;
+
+    string[] xyz;
+
+    function getLength() public view returns(uint){
+        return file_array[msg.sender].length;
+    }
+
+function UploadImage(string memory _imgHash,string memory desc) public {
+        file_array[msg.sender].push(_imgHash);
+        description[msg.sender].push(desc);
+}
+
+function getFiles(address idd) public view returns(string[]  memory){
+    //patient memory p = patients[msg.sender];
+    return file_array[idd];
+}
+
+function getfile_desc(address idd) public view returns(string[] memory){
+    return description[idd];
+
+}
+
+
+
+ function SignUpPatient(string memory _name) public{
+    patient memory p = patients[msg.sender];
+    patient_list[msg.sender] = true;
+    p = patient({name: _name,id:msg.sender});
+    xyz.push(p.name);
+    localDb[msg.sender] = true;
+    Pat_Name[msg.sender] = _name;
+
+ }
+
+ function getPatientName(address add) public view returns(string memory){
+     return Pat_Name[add];
+ }
+ function getDoctorName(address add) public view returns(string memory){
+     return Doc_Name[add];
+ }
+
+
+    function SignUpDoctor(string memory _name,address add) public{
+            doctor memory d = doctor_map[msg.sender];
+            doctor_list[msg.sender] = true;
+            d = doctor({name: _name,id:add});
+            //xyz.push(doctor_map[msg.sender].name);
+            //return xyz;
+        localDb[msg.sender] = true;
+        Doc_Name[msg.sender] = _name;
+
+    }
+
+    function DisplayPatient() public view returns (string[] memory){
+        return xyz;
+    }
+
+    /*function checkPatient(address id) public view returns(bool){
+     if(patient_list[id] == true){
+         return true;
+     }
+     else{
+         return false;
+     }
+ }
+    function getPatientList() public view returns (string[] memory){
+        return xyz;
+    }
+
+    function checkDoctor(address id)public view returns(bool){
+        if(doctor_list[id] == true){
+            return true;
+        }
+        else{
+            return false;
+        }
+    }*/
+    function checkLocalDb(address id)public view returns(bool){
+        if(localDb[id] == true){
+            return false;
+        }
+        else{
+            return true;
+        }
+    }
+
+
+
+ }
