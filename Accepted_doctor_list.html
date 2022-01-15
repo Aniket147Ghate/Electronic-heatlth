@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html lang="en" dir="ltr">
+
+<head>
+  <meta charset="utf-8">
+  <meta charset="utf-8">
+  <link rel="stylesheet" type="text/css" href="vendor/bootstrap/css/bootstrap.min.css">
+  <link rel="stylesheet" type="text/css" href="fonts/font-awesome-4.7.0/css/font-awesome.min.css">
+  <link rel="stylesheet" type="text/css" href="css/Accepted_doctor_list.css">
+  <link rel="stylesheet" type="text/css" href="css/sample.css">
+
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/web3/1.6.1/web3.min.js"></script>
+  <script src="https://bundle.run/buffer@5.4.0"></script>
+  <script src="https://unpkg.com/ipfs-api@9.0.0/dist/index.js" integrity="sha384-5bXRcW9kyxxnSMbOoHzraqa7Z0PQWIao+cgeg327zit1hz5LZCEbIMx/LWKPReuB" crossorigin="anonymous"></script>
+
+  <title></title>
+</head>
+
+<body>
+  <nav class="navbar navbar-dark bg-secondary">
+    <a class="navbar-brand" href="#">
+      Patient Panel
+    </a>
+    <button class=" nav-link btn btn-primary" onclick="Logout()" id="navbarDropdownMenuLink" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+      Logout
+    </button>
+  </nav>
+</body>
+
+</html>
+<script type="text/javascript" src="load_contract.js"></script>
+<script>
+  var contract;
+  var account;
+  var accp_List;
+  window.addEventListener('load', async () => {
+    contract = load_contract();
+    if(contract == "metamask not detected"){
+      alert("Please installed metamask");
+    }else{
+      if (window.web3 !== 'undefined') {
+        window.web3 = new Web3(window.ethereum);
+        //await window.ethereum.enable();
+      } else {
+        web3 = new Web3(window.web3.currentProvider);
+      }
+      if (window.ethereum) {
+        await window.ethereum.request({
+          method: 'eth_requestAccounts'
+        }).then((accounts) => {
+          console.log(accounts[0]);
+          account = accounts[0];
+        });
+        window.ethereum.on('accountsChanged', function (accounts) {
+          window.location.href = "\index.html";
+
+});
+          accp_List = await contract.methods.doctor_Accepted(account).call({from:account});
+          console.log(accp_List);
+          if(accp_List == undefined){
+            DisplayAccp("Nothing to show Here",111)
+          }
+          gett(accp_List);
+          //let name = await contract.methods.getDoctorName(').call();
+          //console.log(name)
+          //gett(n,0,n[0].length);
+
+        }
+      }
+         });
+
+         async function gett(arr){
+           for(i=0;i<arr.length;i++){
+             console.log(arr[i])
+             let name = await contract.methods.getDoctorName(arr[i]).call();
+             console.log(name)
+           DisplayAccp(name,arr[i]);
+         }
+        }
+
+          function DisplayAccp(name,address){
+            //console.log("clicked");
+            if(name != "Nothing to show Here"){
+            var col1 = document.createElement("div");
+            col1.className = "container mx-auto mt-4"
+            var row = document.createElement("div")
+            row.className = "col-md-4"
+            var con_div = document.createElement("div");
+            con_div.className = "card";
+            //con_div.setAttribute("style","width:50rem;")
+            var first_div = document.createElement('div');
+            first_div.className = "card-body";
+            var but = document.createElement('button');
+            but.className = "btn btn-primary pull-right";
+            but.textContent = "Cancel Permission"
+            but.onclick = async function (){
+              var accp = await contract.methods.doctor_Accepted(account).call();
+              var pat_accp = await contract.methods.show_Accpted_Patients(address).call();
+              var doc_add = web3.utils.toChecksumAddress(address);
+              var pat_add = web3.utils.toChecksumAddress(account);
+              var doc_index = accp.indexOf(doc_add);
+              var pat_index = pat_accp.indexOf(pat_add);
+              await contract.methods.remove_from_Accepted_doctor_and_Patient(address,pat_index,doc_index).send({from:account}).then((m)=>{
+                console.log("success");
+              })
+            }
+
+            var h = document.createElement("h5")
+            h.className = "card-title"
+            h.innerText = "Name :-"+ name
+            var p = document.createElement("p")
+            p.className = "card-text"
+            p.innerText = "Address of Doctor: "+address
+            first_div.append(h,but,p)
+            con_div.appendChild(first_div);
+            col1.append(row,con_div);
+            document.body.appendChild(col1);
+          }
+          else{
+            var h = document.createElement("h5")
+            h.className = "card-title"
+            h.innerText = "Nothing to Show Here"
+            first_div.appendChild(h)
+            document.body.appendChild(first_div);
+          }
+
+            //document.getElementById("createnew").innerHTML= data();
+          }
+
+
+
+         function Logout(){
+           function preventBack(){window.history.forward();}
+      setTimeout("preventBack()", 0);
+      window.onunload=function(){null};
+            window.location.href = "\index.html"
+
+         }
+
+
+
+</script>
