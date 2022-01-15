@@ -1,0 +1,170 @@
+<!DOCTYPE html>
+<html lang="en" dir="ltr">
+
+<head>
+  <meta charset="utf-8">
+  <meta charset="utf-8">
+  <link rel="stylesheet" type="text/css" href="vendor/bootstrap/css/bootstrap.min.css">
+  <link rel="stylesheet" type="text/css" href="fonts/font-awesome-4.7.0/css/font-awesome.min.css">
+  <link rel="stylesheet" type="text/css" href="css/patient.css">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/web3/1.6.1/web3.min.js"></script>
+  <script src="https://bundle.run/buffer@5.4.0"></script>
+  <script src="https://unpkg.com/ipfs-api@9.0.0/dist/index.js" integrity="sha384-5bXRcW9kyxxnSMbOoHzraqa7Z0PQWIao+cgeg327zit1hz5LZCEbIMx/LWKPReuB" crossorigin="anonymous"></script>
+
+  <title></title>
+</head>
+
+<body>
+  <nav class="navbar bg-dark navbar-expand">
+    <a class="navbar-brand" href="#" style="color:white;">
+      Doctors Panel
+      </a>
+      <ul class="navbar-nav ml-auto">
+            <li class="nav-item">
+                  <a class="nav-link btn btn" onclick="req_List()"  data-toggle="dropdown" aria-haspopup="true" aria-expanded="false" style="color:white;">
+                    Requested Patients
+                  </a>
+                </li>
+          <li class="nav-item">
+      <a class=" nav-link btn btn-primary" onclick="Logout()" id="navbarDropdownMenuLink" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false" style="color:white;">
+       Logout
+     </a>
+    </li>
+  </ul>
+</nav>
+  <div class="ani-cont container bootstrap snippets bootdey">
+      <div class="row">
+          <div class="col-lg-12">
+              <div class="main-box no-header clearfix">
+                  <div class="main-box-body clearfix">
+                      <div class="table-responsive">
+                          <table class="table user-list">
+                              <thead>
+                                  <tr class="ani-tr">
+                                  <th><span>User/Patient Accepted List</span></th>
+                                  <th><span></span></th>
+                                  <th class="text-center"><span></span></th>
+                                  <th><span></span></th>
+                                  <th><span></span></th>
+
+
+                                  <th><span></span><th>
+                                  <th>&nbsp;</th>
+                                  </tr>
+                              </thead>
+                              <tbody id= "ani">
+
+                              </tbody>
+                          </table>
+                      </div>
+                  </div>
+              </div>
+          </div>
+      </div>
+  </div>
+</body>
+
+</html>
+<script type="text/javascript" src="load_contract.js"></script>
+<script>
+  var web3;
+  var l = [];
+  var contract;
+  var pat_account;
+  async function metamask(){
+    contract = await load_contract();
+    //console.log(contract);
+    if(contract == "metamask not detected"){
+      alert("Please installed metamask");
+    }
+    else{
+      if (window.web3 !== 'undefined') {
+        window.web3 = new Web3(window.ethereum);
+        //await window.ethereum.enable();
+      } else {
+        web3 = new Web3(window.web3.currentProvider);
+      }
+      if (window.ethereum) {
+        await window.ethereum.request({
+          method: 'eth_requestAccounts'
+        }).then((accounts) => {
+          console.log(accounts[0]);
+          account = accounts[0];
+        });
+        window.ethereum.on('accountsChanged', function (accounts) {
+          window.location.href = "\index.html";
+
+});
+      l = await contract.methods.show_Accpted_Patients(account).call({from:account});
+      sessionStorage.setItem("accp_list",JSON.stringify(l));
+      //console.log(l);
+      if(l.length >=1){
+    gett(l,0,l.length);
+}
+  }
+}
+  }
+
+  window.addEventListener('load',()=>{
+    metamask()
+  });
+
+
+   async function gett(arr,start_index,end_index){
+    for(let i=0;i<end_index;i++){
+    var v = await contract.methods.getPatientName(l[i]).call();
+    //console.log(v);
+    DisplayAccepted(l[i],v);
+  }
+}
+
+
+
+  function DisplayAccepted(address,name){
+    var tbod = document.getElementById("ani");
+    var tr = document.createElement("tr");
+    var td1 = document.createElement('td')
+    img1 = document.createElement('img')
+    img1.src = "images/1430453.png"
+    img1.style.width = '100px';
+  img1.style.height = '100px';
+    td1.appendChild(img1);
+    var td2 = document.createElement('td')
+    var an = document.createElement('a')
+    an.className = "auser user-link"
+    an.innerText = "Name: "+name
+    var sp = document.createElement('span')
+    sp.className = "user-subhead"
+    sp.innerText = "\nAddress: "+address
+    td2.append(an,sp)
+    var td3 = document.createElement('td')
+    td3.setAttribute('style',"width:20%")
+    var an2 = document.createElement('a')
+    an2.className = "table-link text-warning"
+    var an3 = document.createElement('button')
+    an3.className = "agn btn btn-primary pull-right"
+    an3.textContent = "View Files"
+    an3.onclick = async function (){
+      var temp = []
+      temp.push(address)
+      sessionStorage.setItem("pat_add",JSON.stringify(temp));
+      console.log(temp)
+      window.location.href = "\doctor_view_files.html";
+    }
+    td3.append(an2,an3);
+
+    tr.append(td1,td2,td3);
+
+    tbod.append(tr);
+
+
+  }
+
+  function req_List(){
+      window.location.href = "\Requested_Patients.html";
+  }
+
+  function Logout(){
+    window.location.href = "\index.html";
+  }
+</script>
